@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="sale_order_fancy" model="ir.actions.report">
+        <field name="name">Fancy Quotation / Sales Order</field>
+        <field name="model">sale.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tr_fancy_reports.report_sale_order_document</field>
+        <field name="report_file">tr_fancy_reports.report_sale_order_document</field>
+        <field name="print_report_name">(object.state in ('draft','sent') and 'Quotation - ' or 'Sales Order - ') + object.name</field>
+        <field name="binding_model_id" ref="sale.model_sale_order"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_sale_order_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="company" t-value="o.company_id"/>
+                <t t-call="tr_fancy_reports.tr_report_layout">
+                    <div class="page tr-page">
+
+                        <!-- Title Banner -->
+                        <div class="tr-doc-title-row">
+                            <div class="tr-doc-title">
+                                <t t-if="o.state in ('draft', 'sent')">QUOTATION</t>
+                                <t t-else="">SALES ORDER</t>
+                            </div>
+                            <div class="tr-doc-meta">
+                                <table class="tr-meta-table">
+                                    <tr>
+                                        <td class="tr-meta-label">Number</td>
+                                        <td class="tr-meta-value" t-esc="o.name"/>
+                                    </tr>
+                                    <tr>
+                                        <td class="tr-meta-label">Date</td>
+                                        <td class="tr-meta-value">
+                                            <span t-field="o.date_order" t-options='{"widget": "date"}'/>
+                                        </td>
+                                    </tr>
+                                    <t t-if="o.validity_date">
+                                        <tr>
+                                            <td class="tr-meta-label">Valid Until</td>
+                                            <td class="tr-meta-value tr-due-date">
+                                                <span t-field="o.validity_date"/>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                    <t t-if="o.client_order_ref">
+                                        <tr>
+                                            <td class="tr-meta-label">Customer Ref</td>
+                                            <td class="tr-meta-value" t-esc="o.client_order_ref"/>
+                                        </tr>
+                                    </t>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Parties -->
+                        <div class="tr-parties-row">
+                            <div class="tr-party-box tr-from">
+                                <div class="tr-party-label">FROM</div>
+                                <div class="tr-party-name" t-esc="company.name"/>
+                                <t t-if="o.user_id">
+                                    <div class="tr-party-detail">
+                                        Sales Rep: <span t-esc="o.user_id.name"/>
+                                    </div>
+                                </t>
+                                <t t-if="company.phone">
+                                    <div class="tr-party-detail">&#9990; <span t-esc="company.phone"/></div>
+                                </t>
+                                <t t-if="company.email">
+                                    <div class="tr-party-detail">&#9993; <span t-esc="company.email"/></div>
+                                </t>
+                            </div>
+                            <div class="tr-party-box tr-to">
+                                <div class="tr-party-label">QUOTE TO</div>
+                                <div class="tr-party-name" t-esc="o.partner_id.name"/>
+                                <t t-if="o.partner_id.street">
+                                    <div class="tr-party-detail" t-esc="o.partner_id.street"/>
+                                </t>
+                                <t t-if="o.partner_id.city or o.partner_id.zip">
+                                    <div class="tr-party-detail">
+                                        <t t-if="o.partner_id.city"><span t-esc="o.partner_id.city"/></t>
+                                        <t t-if="o.partner_id.zip"> - <span t-esc="o.partner_id.zip"/></t>
+                                    </div>
+                                </t>
+                                <t t-if="o.partner_id.phone">
+                                    <div class="tr-party-detail">&#9990; <span t-esc="o.partner_id.phone"/></div>
+                                </t>
+                                <t t-if="o.partner_id.email">
+                                    <div class="tr-party-detail">&#9993; <span t-esc="o.partner_id.email"/></div>
+                                </t>
+                            </div>
+                        </div>
+
+                        <!-- Line Items -->
+                        <table class="tr-lines-table">
+                            <thead>
+                                <tr class="tr-lines-header">
+                                    <th class="tr-col-no">#</th>
+                                    <th class="tr-col-desc">Product / Description</th>
+                                    <th class="tr-col-qty text-center">Qty</th>
+                                    <th class="tr-col-uom text-center">Unit</th>
+                                    <th class="tr-col-price text-right">Unit Price</th>
+                                    <th class="tr-col-tax text-center">Tax</th>
+                                    <th class="tr-col-total text-right">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-set="line_no" t-value="0"/>
+                                <t t-foreach="o.order_line" t-as="line">
+                                    <t t-if="line.display_type == False">
+                                        <t t-set="line_no" t-value="line_no + 1"/>
+                                        <tr t-att-class="'tr-line-row ' + ('tr-line-alt' if line_no % 2 == 0 else '')">
+                                            <td class="tr-col-no text-center" t-esc="line_no"/>
+                                            <td class="tr-col-desc">
+                                                <div class="tr-line-name" t-esc="line.name"/>
+                                            </td>
+                                            <td class="tr-col-qty text-center">
+                                                <span t-field="line.product_uom_qty"
+                                                      t-options='{"widget": "float", "precision": 2}'/>
+                                            </td>
+                                            <td class="tr-col-uom text-center">
+                                                <span t-esc="line.product_uom_id.name if line.product_uom_id else ''"/>
+                                            </td>
+                                            <td class="tr-col-price text-right">
+                                                <span t-field="line.price_unit"
+                                                      t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                            </td>
+                                            <td class="tr-col-tax text-center">
+                                                <span t-esc="', '.join(t.name for t in line.tax_ids)"/>
+                                            </td>
+                                            <td class="tr-col-total text-right">
+                                                <span t-field="line.price_subtotal"
+                                                      t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                    <t t-if="line.display_type == 'line_section'">
+                                        <tr class="tr-section-row">
+                                            <td colspan="7" class="tr-section-title" t-esc="line.name"/>
+                                        </tr>
+                                    </t>
+                                    <t t-if="line.display_type == 'line_note'">
+                                        <tr class="tr-note-row">
+                                            <td colspan="7" class="tr-note-text" t-esc="line.name"/>
+                                        </tr>
+                                    </t>
+                                </t>
+                            </tbody>
+                        </table>
+
+                        <!-- Totals -->
+                        <div class="tr-totals-area">
+                            <div class="tr-totals-spacer"/>
+                            <div class="tr-totals-box">
+                                <table class="tr-totals-table">
+                                    <tr>
+                                        <td class="tr-total-label">Subtotal</td>
+                                        <td class="tr-total-value">
+                                            <span t-field="o.amount_untaxed"
+                                                  t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="tr-total-label">Tax</td>
+                                        <td class="tr-total-value">
+                                            <span t-field="o.amount_tax"
+                                                  t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                        </td>
+                                    </tr>
+                                    <tr class="tr-grand-total-row">
+                                        <td class="tr-total-label">
+                                            <strong>Total (<t t-esc="o.currency_id.name"/>)</strong>
+                                        </td>
+                                        <td class="tr-total-value">
+                                            <strong>
+                                                <span t-field="o.amount_total"
+                                                      t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                            </strong>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <t t-if="o.note">
+                            <div class="tr-notes">
+                                <strong>Terms and Conditions:</strong>
+                                <div t-field="o.note"/>
+                            </div>
+                        </t>
+
+                        <!-- Status Stamp -->
+                        <t t-if="o.state == 'cancel'">
+                            <div class="tr-stamp tr-stamp-cancelled">CANCELLED</div>
+                        </t>
+                        <t t-elif="o.state == 'draft'">
+                            <div class="tr-stamp tr-stamp-draft">DRAFT</div>
+                        </t>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

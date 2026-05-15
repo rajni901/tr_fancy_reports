@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Standalone fancy layout — does NOT inherit web.external_layout.
+         Each report calls this directly via t-call="tr_fancy_reports.tr_report_layout". -->
+    <template id="tr_report_layout">
+        <t t-set="company" t-value="company or env.company"/>
+
+        <!-- ── Gradient Header ── -->
+        <div t-attf-class="header o_company_#{company.id}_layout"
+             t-attf-style="background: linear-gradient(135deg, #{company.report_header_color or '#1a1a5e'} 0%, #{company.report_accent_color or '#6c3fc5'} 100%); color: #fff; padding: 0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 28px 12px 28px;">
+                <!-- Logo -->
+                <div>
+                    <t t-if="company.logo">
+                        <img t-att-src="image_data_uri(company.logo)"
+                             style="max-height:60px; max-width:150px; object-fit:contain; filter:brightness(0) invert(1);"
+                             alt="Logo"/>
+                    </t>
+                    <t t-else="">
+                        <span style="font-size:18pt; font-weight:800; color:#fff;" t-esc="company.name"/>
+                    </t>
+                </div>
+                <!-- Company Info -->
+                <div style="text-align:right; color:rgba(255,255,255,0.9); font-size:8pt; line-height:1.5;">
+                    <div style="font-size:12pt; font-weight:700; color:#fff;" t-esc="company.name"/>
+                    <t t-if="company.report_tagline">
+                        <div style="font-size:6.5pt; letter-spacing:1.5px; text-transform:uppercase; color:rgba(255,255,255,0.7); margin-bottom:3px;"
+                             t-esc="company.report_tagline"/>
+                    </t>
+                    <t t-if="company.street">
+                        <div t-esc="company.street"/>
+                    </t>
+                    <t t-if="company.city or company.zip">
+                        <div>
+                            <t t-if="company.city"><span t-esc="company.city"/></t>
+                            <t t-if="company.zip"> - <span t-esc="company.zip"/></t>
+                        </div>
+                    </t>
+                    <t t-if="company.phone">
+                        <div>&#9990; <span t-esc="company.phone"/>
+                            <t t-if="company.email"> | &#9993; <span t-esc="company.email"/></t>
+                        </div>
+                    </t>
+                    <t t-if="company.website">
+                        <div t-esc="company.website"/>
+                    </t>
+                </div>
+            </div>
+            <div style="height:4px; background:rgba(255,255,255,0.2);"/>
+        </div>
+
+        <!-- ── Article / Page Content ── -->
+        <div t-attf-class="article o_company_#{company.id}_layout"
+             style="padding: 20px 28px 10px 28px;">
+            <t t-out="0"/>
+        </div>
+
+        <!-- ── Footer ── -->
+        <div t-attf-class="footer o_company_#{company.id}_layout">
+            <div style="border-top:2px solid #1a1a5e; display:flex; justify-content:space-between; align-items:center; padding:6px 28px; background:#f4f4f4; font-size:8pt; color:#555;">
+                <div style="flex:1; font-style:italic;">
+                    <t t-if="company.report_footer_text">
+                        <span t-esc="company.report_footer_text"/>
+                    </t>
+                </div>
+                <div style="color:#888; font-size:7.5pt;">
+                    Page <span class="page"/> / <span class="topage"/>
+                </div>
+            </div>
+            <div style="text-align:center; font-size:6pt; padding:3px 0; background:#1a1a5e; color:rgba(255,255,255,0.5); letter-spacing:0.5px;">
+                Powered by <strong style="color:rgba(255,255,255,0.8);">Technical Rajni</strong> — www.technicalrajni.com
+            </div>
+        </div>
+    </template>
+
+</odoo>

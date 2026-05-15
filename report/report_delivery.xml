@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="delivery_slip_fancy" model="ir.actions.report">
+        <field name="name">Fancy Delivery Slip</field>
+        <field name="model">stock.picking</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tr_fancy_reports.report_delivery_document</field>
+        <field name="report_file">tr_fancy_reports.report_delivery_document</field>
+        <field name="print_report_name">'Delivery - ' + object.name</field>
+        <field name="binding_model_id" ref="stock.model_stock_picking"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_delivery_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="company" t-value="o.company_id"/>
+                <t t-call="tr_fancy_reports.tr_report_layout">
+                    <div class="page tr-page">
+
+                        <!-- Title Banner -->
+                        <div class="tr-doc-title-row">
+                            <div class="tr-doc-title">
+                                <t t-if="o.picking_type_id.code == 'outgoing'">DELIVERY ORDER</t>
+                                <t t-elif="o.picking_type_id.code == 'incoming'">RECEIPT</t>
+                                <t t-else="">INTERNAL TRANSFER</t>
+                            </div>
+                            <div class="tr-doc-meta">
+                                <table class="tr-meta-table">
+                                    <tr>
+                                        <td class="tr-meta-label">Reference</td>
+                                        <td class="tr-meta-value" t-esc="o.name"/>
+                                    </tr>
+                                    <tr>
+                                        <td class="tr-meta-label">Date</td>
+                                        <td class="tr-meta-value">
+                                            <span t-field="o.scheduled_date" t-options='{"widget": "date"}'/>
+                                        </td>
+                                    </tr>
+                                    <t t-if="o.origin">
+                                        <tr>
+                                            <td class="tr-meta-label">Source</td>
+                                            <td class="tr-meta-value" t-esc="o.origin"/>
+                                        </tr>
+                                    </t>
+                                    <tr>
+                                        <td class="tr-meta-label">Status</td>
+                                        <td class="tr-meta-value" t-esc="o.state.replace('_',' ').title()"/>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Parties -->
+                        <div class="tr-parties-row">
+                            <div class="tr-party-box tr-from">
+                                <div class="tr-party-label">FROM</div>
+                                <div class="tr-party-name" t-esc="o.location_id.complete_name"/>
+                                <div class="tr-party-detail" t-esc="company.name"/>
+                            </div>
+                            <div class="tr-party-box tr-to">
+                                <div class="tr-party-label">TO</div>
+                                <t t-if="o.partner_id">
+                                    <div class="tr-party-name" t-esc="o.partner_id.name"/>
+                                    <t t-if="o.partner_id.street">
+                                        <div class="tr-party-detail" t-esc="o.partner_id.street"/>
+                                    </t>
+                                    <t t-if="o.partner_id.city or o.partner_id.zip">
+                                        <div class="tr-party-detail">
+                                            <t t-if="o.partner_id.city"><span t-esc="o.partner_id.city"/></t>
+                                            <t t-if="o.partner_id.zip"> - <span t-esc="o.partner_id.zip"/></t>
+                                        </div>
+                                    </t>
+                                    <t t-if="o.partner_id.phone">
+                                        <div class="tr-party-detail">&#9990; <span t-esc="o.partner_id.phone"/></div>
+                                    </t>
+                                </t>
+                                <t t-else="">
+                                    <div class="tr-party-name" t-esc="o.location_dest_id.complete_name"/>
+                                </t>
+                            </div>
+                        </div>
+
+                        <!-- Products Table -->
+                        <table class="tr-lines-table">
+                            <thead>
+                                <tr class="tr-lines-header">
+                                    <th class="tr-col-no">#</th>
+                                    <th class="tr-col-desc">Product</th>
+                                    <th class="tr-col-qty text-center">Demand</th>
+                                    <th class="tr-col-qty text-center">Done</th>
+                                    <th class="tr-col-uom text-center">Unit</th>
+                                    <th class="tr-col-desc">Lot / Serial</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-set="line_no" t-value="0"/>
+                                <t t-foreach="o.move_ids" t-as="move">
+                                    <t t-set="line_no" t-value="line_no + 1"/>
+                                    <tr t-att-class="'tr-line-row ' + ('tr-line-alt' if line_no % 2 == 0 else '')">
+                                        <td class="tr-col-no text-center" t-esc="line_no"/>
+                                        <td class="tr-col-desc">
+                                            <div class="tr-line-name" t-esc="move.product_id.name"/>
+                                            <t t-if="move.product_id.default_code">
+                                                <div class="tr-line-ref">
+                                                    [<span t-esc="move.product_id.default_code"/>]
+                                                </div>
+                                            </t>
+                                        </td>
+                                        <td class="tr-col-qty text-center">
+                                            <span t-field="move.product_uom_qty"
+                                                  t-options='{"widget": "float", "precision": 2}'/>
+                                        </td>
+                                        <td class="tr-col-qty text-center">
+                                            <span t-field="move.quantity"
+                                                  t-options='{"widget": "float", "precision": 2}'/>
+                                        </td>
+                                        <td class="tr-col-uom text-center">
+                                            <span t-esc="move.product_uom.name if move.product_uom else ''"/>
+                                        </td>
+                                        <td class="tr-col-desc">
+                                            <t t-foreach="move.move_line_ids" t-as="ml">
+                                                <t t-if="ml.lot_id">
+                                                    <div t-esc="ml.lot_id.name"/>
+                                                </t>
+                                            </t>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+
+                        <!-- Signature Block -->
+                        <div class="tr-signature-row">
+                            <div class="tr-signature-box">
+                                <div class="tr-signature-line"/>
+                                <div class="tr-signature-label">Prepared By</div>
+                                <t t-if="o.user_id">
+                                    <div class="tr-signature-name" t-esc="o.user_id.name"/>
+                                </t>
+                            </div>
+                            <div class="tr-signature-box">
+                                <div class="tr-signature-line"/>
+                                <div class="tr-signature-label">Received By</div>
+                                <div class="tr-signature-name">Date: ________________</div>
+                            </div>
+                        </div>
+
+                        <!-- Note -->
+                        <t t-if="o.note">
+                            <div class="tr-notes">
+                                <strong>Notes:</strong>
+                                <div t-field="o.note"/>
+                            </div>
+                        </t>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

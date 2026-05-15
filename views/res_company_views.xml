@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_company_fancy_report_form" model="ir.ui.view">
+        <field name="name">res.company.fancy.report.form</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='general_info']" position="after">
+                <page string="Report Settings" name="fancy_report_settings">
+                    <group string="Branding">
+                        <group>
+                            <field name="report_header_color" widget="color"/>
+                            <field name="report_accent_color" widget="color"/>
+                            <field name="report_tagline"/>
+                        </group>
+                        <group>
+                            <field name="report_show_bank_details"/>
+                            <field name="report_show_payment_terms"/>
+                        </group>
+                    </group>
+                    <group string="Footer">
+                        <field name="report_footer_text" nolabel="1" placeholder="e.g. Thank you for your business!"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
